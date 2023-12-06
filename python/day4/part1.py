@@ -14,7 +14,7 @@ class ScratchCard:
 
     def score(self):
         correct = len(list(filter(lambda c: c in self.winning_numbers, self.own_numbers)))
-        return pow(2, correct -1) if correct > 0 else 0
+        return pow(2, correct - 1) if correct > 0 else 0
 
 
 if __name__ == "__main__":
