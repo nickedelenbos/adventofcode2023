@@ -8,6 +8,7 @@ import java.util.stream.LongStream;
 public class Part2 {
     public static void main(String[] args) throws IOException {
         var seeds = new ArrayList<Long>();
+        // Linked is essential, since the almanac order is important
         var mappings = new LinkedHashMap<String, List<List<Long>>>();
 
         String category = null;
@@ -37,30 +38,15 @@ public class Part2 {
                 }
             }
 
-            var total_amount_of_seeds = 0l;
-            var i = 0;
-
-            while (i < seeds.size()) {
-                total_amount_of_seeds += LongStream.range(seeds.get(i), seeds.get(i) + seeds.get(i + 1)).count();
-                i += 2;
-            }
-
             long start = System.nanoTime();
-            i = 0;
+            var i = 0;
             AtomicLong lowest = new AtomicLong(Long.MAX_VALUE);
 
             while (i < seeds.size()) {
                 LongStream.range(seeds.get(i), seeds.get(i) + seeds.get(i + 1)).parallel().forEach(
                         seed -> {
-                            long source_value = Part2.determineLocation(seed, mappings);
-                            synchronized (lowest) {
-                                long unsafeLowest = lowest.get();
-                                if (unsafeLowest == Long.MAX_VALUE) {
-                                    lowest.set(source_value);
-                                } else if (unsafeLowest > source_value) {
-                                    lowest.set(source_value);
-                                }
-                            }
+                            final long location = Part2.determineLocation(seed, mappings);
+                            lowest.getAndUpdate((val) -> val == Long.MAX_VALUE || val > location ? location : val);
                         }
                 );
 
@@ -76,22 +62,22 @@ public class Part2 {
     }
 
     public static Long determineLocation(final long seed, HashMap<String, List<List<Long>>> mappings) {
-        AtomicLong startValue = new AtomicLong(seed);
+        long startValue = seed;
 
-        mappings.forEach((category, rangeList) -> {
-            for (List<Long> mapping : rangeList) {
+        for (Map.Entry<String, List<List<Long>>> entry : mappings.entrySet()) {
+            for (List<Long> mapping : entry.getValue()) {
+                /* 0 = source, 1 = destination, 2 = length */
                 var mappingSource = mapping.get(0);
                 var mappingDestination = mapping.get(1);
-                var mappingLength = mapping.get(2);
+                var mappingSourceEnd = mappingSource + mapping.get(2) - 1;
 
-                var mappingSourceEnd = mappingSource + mappingLength - 1;
-                long sv = startValue.get();
-                if (sv >= mappingSource && sv <= mappingSourceEnd) {
-                    startValue.set(sv + (mappingDestination - mappingSource));
+                if (startValue >= mappingSource && startValue <= mappingSourceEnd) {
+                    startValue += (mappingDestination - mappingSource);
                     break;
                 }
             }
-        });
-        return startValue.get();
+        }
+
+        return startValue;
     }
 }
