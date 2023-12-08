@@ -1,9 +1,8 @@
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.*;
-import java.util.stream.Collectors;
-
+import java.util.HashMap;
+import java.util.Map;
 
 public class Day8Part1 {
     public static void main(String[] args) throws IOException {
